@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-3.2.xsd" >
+	
+	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+    	<property name="exceptionMappings">
+    		<props>
+    			<prop key="java.lang.RuntimeException">error</prop>
+    		</props>
+    	</property>
+    </bean>
+	
+	<!-- 通过JNDI 配置DataSource -->
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+	       <!-- 通过jndiName指定引用的JNDI数据源名称 -->
+	       <property name="jndiName"> 
+	          <value>java:comp/env/jdbc/smbms</value>
+	       </property>
+	</bean>
+	
+	<!-- 配置sqlSession的工厂类 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 引入datasource -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 配置引入mybatis的配置文件 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" ></property>
+		<!-- 配置sql映射文件    去读取所有的xml文件-->
+		<property name="mapperLocations">
+			<list>
+				<value>
+					classpath:com/dao/**/*.xml
+				</value>
+			</list>
+		</property>
+	</bean>
+	
+	 <!-- 使用自动扫描的方式来实现xml文件，也是我们的最终版本-->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+		<property name="basePackage" value="com.dao"></property>
+	</bean>
+	
+	
+	<!-- 扫描注解 -->
+	<context:component-scan base-package="com.service,com.dao" />
+	<!-- 定义事务管理器 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	     <property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<context:component-scan base-package="com.service" />
+    <context:component-scan base-package="com.dao" />
+	
+	
+	<tx:annotation-driven transaction-manager="txManager"/>
+	</beans>
+	
